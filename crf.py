@@ -2,47 +2,67 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Load the data
-df = pd.read_csv('CRF_Vacancy_Control_Dashboard.csv')
+# Data: Extracted from the PDF
+data = {
+    "Facility Name": ["Icahn House", "House East", "Hope House", "Kenilworth", "Park Overlook Stabilization",
+                      "Ellington", "Apollo", "Lenox", "Light House", "Comfort Inn", "Best Western", "Park West",
+                      "Belnord", "Cauldwell", "Union Hall", "Union Hall Drop in"],
+    "Total Units": [65, 192, 51, 200, 91, 83, 43, 41, 240, 101, 101, 113, 130, 66, 200, 40],
+    "Available Units": [3, 1, 5, 0, 1, 4, 2, 0, 22, 1, 2, 4, 0, 1, 1, 0],
+    "Reserved Units": [0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0],
+    "Maintenance Units": [0, 0, 0, 0, 0, 0, 0, 0, 6, 1, 1, 0, 0, 0, 0, 0],
+    "Under Repair Units": [2, 1, 2, 2, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+    "Long Term Repair Units": [1, 3, 0, 0, 0, 0, 0, 0, 3, 0, 0, 2, 0, 3, 0, 0],
+    "Other Units": [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+    "Renovated Units": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0],
+    "Unoccupied Units": [10, 8, 8, 2, 1, 5, 3, 0, 31, 6, 8, 8, 0, 6, 7, 0],
+    "Occupied Units": [55, 184, 43, 198, 90, 78, 40, 41, 209, 95, 93, 105, 130, 60, 173, 37],
+    "Occupancy Rate (%)": [85, 96, 84, 99, 99, 94, 93, 100, 87, 94, 92, 93, 100, 91, 87, 93]
+}
 
-# Set up the Streamlit app
-st.title('CRF Vacancy Control Dashboard')
-st.write('This dashboard provides an overview of the current occupancy and unit status across CRF facilities.')
+# Create a DataFrame
+df = pd.DataFrame(data)
 
-# Display the raw data
-st.write("### Data Overview")
+# Title for the app
+st.title("CRF Vacancy Control Dashboard")
+
+# Display the raw data as a table
+st.write("### Facility Data Overview")
 st.dataframe(df)
 
-# Facility filter
-facility_options = df['Facility Name'].unique()
-selected_facility = st.selectbox('Select a Facility to view details:', facility_options)
-
-# Filter data by selected facility
-filtered_df = df[df['Facility Name'] == selected_facility]
-
-# Display the selected facility's data
-st.write(f"### Details for {selected_facility}")
-st.write(filtered_df)
-
-# Bar chart for Occupancy Rate
-st.write("### Occupancy Rate across all facilities")
+# Graph 1: Occupancy Rate Trend
+st.write("### Occupancy Rate by Facility")
 fig, ax = plt.subplots()
-ax.bar(df['Facility Name'], df['Occupancy Rate (%)'])
-ax.set_xlabel('Facility Name')
-ax.set_ylabel('Occupancy Rate (%)')
+ax.barh(df['Facility Name'], df['Occupancy Rate (%)'])
+ax.set_xlabel('Occupancy Rate (%)')
 ax.set_title('Current Occupancy Rate by Facility')
-plt.xticks(rotation=90)
 st.pyplot(fig)
 
-# Display unoccupied units
-st.write("### Unoccupied Units")
-unoccupied_df = df[df['Unoccupied Units'] > 0]
-st.dataframe(unoccupied_df[['Facility Name', 'Unoccupied Units', 'Available Units', 'Under Repair Units']])
+# Graph 2: Unoccupied Units Trend
+st.write("### Unoccupied Units by Facility")
+fig2, ax2 = plt.subplots()
+ax2.barh(df['Facility Name'], df['Unoccupied Units'], color='orange')
+ax2.set_xlabel('Unoccupied Units')
+ax2.set_title('Unoccupied Units by Facility')
+st.pyplot(fig2)
 
-# Download the filtered data as CSV
+# Graph 3: Breakdown of Unit Status (Stacked Bar Chart)
+st.write("### Unit Status Breakdown by Facility")
+df_status = df[['Facility Name', 'Available Units', 'Reserved Units', 'Maintenance Units', 
+                'Under Repair Units', 'Long Term Repair Units', 'Other Units']]
+
+# Plot stacked bar chart
+fig3, ax3 = plt.subplots()
+df_status.set_index('Facility Name').plot(kind='bar', stacked=True, ax=ax3)
+ax3.set_ylabel('Number of Units')
+ax3.set_title('Breakdown of Unit Status by Facility')
+st.pyplot(fig3)
+
+# Download data option
+st.write("### Download Data")
 st.download_button(
-    label="Download Filtered Data as CSV",
-    data=filtered_df.to_csv(index=False),
-    file_name=f'{selected_facility}_data.csv',
-    mime='text/csv',
+    label="Download data as CSV",
+    data=df.to_csv(index=False),
+    file_name='CRF_Vacancy_Control_Data.csv',
+    mime='text/csv'
 )
